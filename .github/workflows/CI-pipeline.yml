@@ -20,6 +20,27 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: Install terraform
+        run: | 
+          sudo apt-get update && sudo apt-get install -y wget
+          wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install terraform -y
+
+      - name: Create test static nodes
+        working-directory: ./manifests/testing-framework/test-sets
+        run: |
+          sudo apt update && sudo apt install -y jq
+
+          echo "Saving terraform script and key"
+          echo "${{ secrets.CREATE_STATIC_NODES }}" | base64 -d > script.tf
+
+          echo "Running terraform init"
+          terraform init
+          echo "Running terraform apply"   
+          terraform apply -auto-approve
+
+
       - name: Merge with master branch
         uses: everlytic/branch-merge@1.1.5
         with:
